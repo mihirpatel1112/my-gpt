@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TextBlock } from "@anthropic-ai/sdk/resources/index.mjs";
 import React, { useState } from "react";
 import Loader from "@/components/Loader";
+import Footer from "@/components/Footer";
 
 const client = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
@@ -144,6 +145,7 @@ export default function Home() {
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
