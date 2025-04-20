@@ -1,115 +1,149 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import Anthropic from "@anthropic-ai/sdk";
+import { TextBlock } from "@anthropic-ai/sdk/resources/index.mjs";
+import React, { useState } from "react";
+import Loader from "@/components/Loader";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const client = new Anthropic({
+  apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
+  dangerouslyAllowBrowser: true,
 });
 
 export default function Home() {
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [inputTokenCount, setInputTokenCount] = useState(0);
+  const [outputTokenCount, setOutputTokenCount] = useState(0);
+
+  async function claudeCall(message: string) {
+    setIsLoading(true);
+    return client.messages.create({
+      messages: [{ role: "user", content: message }],
+      system:
+        "You are an expert in every field with lots of experience. You should reply in everyday hindi but in english script. Fro e.g., user_input: tell me your name, your_response: Mera naam claude ha. user_input: tumhara naam kya ha, your_response: Mera naam claude ha. You give example when user ask to calrify something but example needs to be from everyday life and u give only one example until and unless user ask you to give more. adn you reply concisely and precisely no extra or unrelated responses",
+      model: "claude-3-7-sonnet-20250219",
+      max_tokens: 1024,
+    });
+  }
+
+  const handleInput = async () => {
+    const res = await claudeCall(input);
+    setInputTokenCount(res.usage.input_tokens);
+    setOutputTokenCount(res.usage.output_tokens);
+    const assistantText = res.content
+      .filter((b): b is TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("\n");
+    setIsLoading(false);
+    setResponse(assistantText || "No reply");
+  };
+
+  const handleReset = () => {
+    setInput("");
+    setResponse("");
+    setInputTokenCount(0);
+    setOutputTokenCount(0);
+    setError("");
+    setIsLoading(false);
+  };
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div>
+      <div className="mx-auto text-center">
+        <div className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl">
+          My GPT
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8">
+          Personal GPT for your needs
+        </p>
+      </div>
+
+      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8 flex flex-col gap-4">
+        <div className="bg-slate-200 rounded-lg p-4">
+          {isLoading ? <Loader /> : <div>{response}</div>}
+        </div>
+        <div className="sm:col-span-2">
+          <div className="flex items-center gap-6 text-sm text-slate-700">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-slate-200 px-2 py-0.5 font-medium text-slate-600">
+                Input
+              </span>
+              <span className="tabular-nums">{inputTokenCount}</span>
+            </div>
+
+            <div className="h-4 w-px bg-slate-300" />
+
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-slate-200 px-2 py-0.5 font-medium text-slate-600">
+                Output
+              </span>
+              <span className="tabular-nums">{outputTokenCount}</span>
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <textarea
+              id="input"
+              name="input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={4}
+              className="block w-full rounded-md bg-white px-3.5 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+              defaultValue={""}
+              placeholder="Ask anything"
+            />
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <button
+            type="submit"
+            onClick={handleInput}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 w-full rounded-md bg-indigo-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Submit
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              className="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="">
+          <button
+            type="reset"
+            onClick={handleReset}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 w-full rounded-md bg-red-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-xs hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+          >
+            Clear
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              className="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
