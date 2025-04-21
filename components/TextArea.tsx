@@ -22,8 +22,8 @@ export default function TextArea(props: TextAreaProps) {
   };
 
   return (
-    <div className="m-2 mt-10">
-      <div className="bg-indigo-100 rounded-xl p-2 w-95/100 sm:w-50/100 mx-auto drop-shadow-2xl border-1 border-indigo-500">
+    <div className="my-2">
+      <div className="bg-indigo-100 rounded-xl p-2 mx-auto drop-shadow-2xl border-1 border-indigo-500">
         <div>
           <textarea
             className="w-full focus:outline-none p-2"
@@ -39,7 +39,7 @@ export default function TextArea(props: TextAreaProps) {
             viewBox="0 0 24 24"
             strokeWidth="1.5"
             stroke="currentColor"
-            className="size-8 border border-indigo-500 rounded-full p-1"
+            className="size-6 border border-indigo-500 rounded-full p-1"
           >
             <path
               strokeLinecap="round"

@@ -1,9 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { TextBlock } from "@anthropic-ai/sdk/resources/index.mjs";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Loader from "@/components/Loader";
 import Footer from "@/components/Footer";
 import TextArea from "@/components/TextArea";
+import Stats from "@/components/Stats";
+import SendMessage from "@/components/SendMessage";
+import ReceiveMessage from "@/components/ReceiveMessage";
 
 const client = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
@@ -12,16 +15,21 @@ const client = new Anthropic({
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
+  const [messages, setMessages] = useState<{role: string, content: string}[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [inputTokenCount, setInputTokenCount] = useState(0);
   const [outputTokenCount, setOutputTokenCount] = useState(0);
 
-  async function claudeCall(message: string) {
+  async function claudeCall(userMessage: string) {
     setIsLoading(true);
+    const conversationHistory = [...messages, { role: "user", content: userMessage }];
+    
     return client.messages.create({
-      messages: [{ role: "user", content: message }],
+      messages: conversationHistory.map(msg => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content
+      })),
       system:
         "You are an expert in every field with lots of experience. You should reply in everyday hindi but in english script. Fro e.g., user_input: tell me your name, your_response: Mera naam claude ha. user_input: tumhara naam kya ha, your_response: Mera naam claude ha. You give example when user ask to calrify something but example needs to be from everyday life and u give only one example until and unless user ask you to give more. adn you reply concisely and precisely no extra or unrelated responses",
       model: "claude-3-7-sonnet-20250219",
@@ -30,20 +38,33 @@ export default function Home() {
   }
 
   const handleInput = async () => {
-    const res = await claudeCall(input);
-    setInputTokenCount(res.usage.input_tokens);
-    setOutputTokenCount(res.usage.output_tokens);
-    const assistantText = res.content
-      .filter((b): b is TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
-    setIsLoading(false);
-    setResponse(assistantText || "No reply");
+    if (!input.trim()) return;
+
+    const userMessage = input;
+    setMessages([...messages, { role: "user", content: userMessage }]);
+    setInput("");
+    
+    try {
+      const res = await claudeCall(userMessage);
+      setInputTokenCount(res.usage.input_tokens);
+      setOutputTokenCount(res.usage.output_tokens);
+      
+      const assistantText = res.content
+        .filter((b): b is TextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join("\n");
+      
+      setMessages(prevMessages => [...prevMessages, { role: "assistant", content: assistantText || "No reply" }]);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReset = () => {
     setInput("");
-    setResponse("");
+    setMessages([]);
     setInputTokenCount(0);
     setOutputTokenCount(0);
     setError("");
@@ -51,53 +72,62 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className="mx-auto w-95/100 sm:w-50/100">
       <div className="mx-auto text-center">
-        <div className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl">
+        <div className="mt-2 text-2xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-4xl">
           My GPT
         </div>
-        <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8">
+        <p className="mt-2 text-sm font-medium text-pretty text-gray-500 sm:text-md">
           Personal GPT for your needs
         </p>
       </div>
 
       <div className="mx-auto">
-        <div className="bg-slate-200 rounded-lg p-4">
-          {isLoading ? <Loader /> : <div>{response}</div>}
+        <div className="rounded-lg p-4 min-h-40 max-h-96 overflow-y-auto" ref={(el) => {
+          if (el) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }}>
+          {isLoading && <Loader />}
+          {error && <div className="text-red-500">{error}</div>}
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <div key={index}>
+                {message.role && message.role === "user" ? (
+                  <SendMessage value={message.content}/>
+                ) : (
+                  <ReceiveMessage value={message.content}/>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 mt-2">
           <div className="flex items-center gap-6 text-sm text-slate-700">
-            <div className="flex items-center gap-2">
-              <span className="rounded-md bg-slate-200 px-2 py-0.5 font-medium text-slate-600">
-                Input
-              </span>
-              <span className="tabular-nums">{inputTokenCount}</span>
-            </div>
+            <Stats label="Input" value={inputTokenCount} />
 
             <div className="h-4 w-px bg-slate-300" />
 
-            <div className="flex items-center gap-2">
-              <span className="rounded-md bg-slate-200 px-2 py-0.5 font-medium text-slate-600">
-                Output
-              </span>
-              <span className="tabular-nums">{outputTokenCount}</span>
-            </div>
+            <Stats label="Output" value={outputTokenCount} />
           </div>
-          
-            
-
         </div>
 
         <TextArea
-              id="input"
-              name="input"
-              value={input}
-              onChange={(e: any) => setInput((e.target.value))}
-              rows={1}
-              defaultValue={""}
-              placeholder="Ask anything"
-          />
+          id="input"
+          name="input"
+          value={input}
+          onChange={(e: any) => setInput(e.target.value)}
+          rows={1}
+          defaultValue={""}
+          placeholder="Ask anything"
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleInput();
+            }
+          }}
+        />
 
         <div className="mt-10">
           <button
@@ -148,7 +178,7 @@ export default function Home() {
           </button>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
