@@ -3,6 +3,7 @@ import { TextBlock } from "@anthropic-ai/sdk/resources/index.mjs";
 import React, { useState } from "react";
 import Loader from "@/components/Loader";
 import Footer from "@/components/Footer";
+import TextArea from "@/components/TextArea";
 
 const client = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
@@ -60,10 +61,11 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8 flex flex-col gap-4">
+      <div className="mx-auto">
         <div className="bg-slate-200 rounded-lg p-4">
           {isLoading ? <Loader /> : <div>{response}</div>}
         </div>
+
         <div className="sm:col-span-2">
           <div className="flex items-center gap-6 text-sm text-slate-700">
             <div className="flex items-center gap-2">
@@ -82,19 +84,20 @@ export default function Home() {
               <span className="tabular-nums">{outputTokenCount}</span>
             </div>
           </div>
-          <div className="mt-2.5">
-            <textarea
+          
+            
+
+        </div>
+
+        <TextArea
               id="input"
               name="input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              rows={4}
-              className="block w-full rounded-md bg-white px-3.5 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+              onChange={(e: any) => setInput((e.target.value))}
+              rows={1}
               defaultValue={""}
               placeholder="Ask anything"
-            />
-          </div>
-        </div>
+          />
 
         <div className="mt-10">
           <button
@@ -108,13 +111,13 @@ export default function Home() {
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              stroke-width="1.5"
+              strokeWidth="1.5"
               stroke="currentColor"
               className="size-6"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
               />
             </svg>
@@ -132,19 +135,20 @@ export default function Home() {
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              stroke-width="1.5"
+              strokeWidth="1.5"
               stroke="currentColor"
               className="size-6"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M6 18 18 6M6 6l12 12"
               />
             </svg>
           </button>
         </div>
       </div>
+      
       <Footer />
     </div>
   );
