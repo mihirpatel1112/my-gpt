@@ -15,7 +15,9 @@ const client = new Anthropic({
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{role: string, content: string}[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [inputTokenCount, setInputTokenCount] = useState(0);
@@ -23,12 +25,15 @@ export default function Home() {
 
   async function claudeCall(userMessage: string) {
     setIsLoading(true);
-    const conversationHistory = [...messages, { role: "user", content: userMessage }];
-    
+    const conversationHistory = [
+      ...messages,
+      { role: "user", content: userMessage },
+    ];
+
     return client.messages.create({
-      messages: conversationHistory.map(msg => ({
+      messages: conversationHistory.map((msg) => ({
         role: msg.role as "user" | "assistant",
-        content: msg.content
+        content: msg.content,
       })),
       system:
         "You are an expert in every field with lots of experience. You should reply in everyday hindi but in english script. Fro e.g., user_input: tell me your name, your_response: Mera naam claude ha. user_input: tumhara naam kya ha, your_response: Mera naam claude ha. You give example when user ask to calrify something but example needs to be from everyday life and u give only one example until and unless user ask you to give more. adn you reply concisely and precisely no extra or unrelated responses",
@@ -43,18 +48,21 @@ export default function Home() {
     const userMessage = input;
     setMessages([...messages, { role: "user", content: userMessage }]);
     setInput("");
-    
+
     try {
       const res = await claudeCall(userMessage);
       setInputTokenCount(res.usage.input_tokens);
       setOutputTokenCount(res.usage.output_tokens);
-      
+
       const assistantText = res.content
         .filter((b): b is TextBlock => b.type === "text")
         .map((b) => b.text)
         .join("\n");
-      
-      setMessages(prevMessages => [...prevMessages, { role: "assistant", content: assistantText || "No reply" }]);
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", content: assistantText || "No reply" },
+      ]);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -83,23 +91,26 @@ export default function Home() {
       </div>
 
       <div className="mx-auto">
-        <div className="rounded-lg p-4 min-h-40 max-h-96 overflow-y-auto" ref={(el) => {
-          if (el) {
-            el.scrollTop = el.scrollHeight;
-          }
-        }}>
-          {isLoading && <Loader />}
+        <div
+          className="rounded-lg p-4 min-h-40 max-h-96 overflow-y-auto"
+          ref={(el) => {
+            if (el) {
+              el.scrollTop = el.scrollHeight;
+            }
+          }}
+        >
           {error && <div className="text-red-500">{error}</div>}
           <div className="space-y-4">
             {messages.map((message, index) => (
               <div key={index}>
                 {message.role && message.role === "user" ? (
-                  <SendMessage value={message.content}/>
+                  <SendMessage value={message.content} />
                 ) : (
-                  <ReceiveMessage value={message.content}/>
+                  <ReceiveMessage value={message.content} />
                 )}
               </div>
             ))}
+            <div className="mr-auto">{isLoading && <Loader />}</div>
           </div>
         </div>
 
@@ -122,7 +133,7 @@ export default function Home() {
           defaultValue={""}
           placeholder="Ask anything"
           onKeyDown={(e: React.KeyboardEvent) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleInput();
             }
